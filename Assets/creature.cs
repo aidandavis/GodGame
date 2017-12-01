@@ -4,40 +4,54 @@ using UnityEngine;
 
 public class Creature : MonoBehaviour
 {
-    public CreatureAction EnvironmentMethod(List<DistanceToOtherCreatures> proximityList) {
-        if (AtTree())
-        {
-            return new CreatureAction(CreatureAction.Action.wait, 0);
-        }
-        else if (CloseToTree())
-        {
-            _body.LookAt(tree.transform);
-            _body.Translate(Vector3.forward * moveSpeedFast * Time.deltaTime);
-        }
-        else
-        {
-            _body.Translate(Vector3.forward * moveSpeed * Time.deltaTime);
-        }
-    }
-
-    bool AtTree()
+    public CreatureAction EnvironmentMethod(List<DistanceToOtherCreatures> proximityList)
     {
-        return (Vector3.Distance(tree.transform.position, transform.position) < 0.2f);
-    }
+        bool isTree = false;
+        float distanceToTree = 50;
+        float angleToTree = 0;
 
-    bool CloseToTree()
-    {
-        return (Vector3.Distance(tree.transform.position, transform.position) < TREE_PROXIMITY_THRESHOLD);
-    }
-
-    void OnCollisionEnter(Collision collision)
-    {
-        String otherObject = collision.gameObject.tag;
-        if (otherObject == "wall")
+        foreach (DistanceToOtherCreatures distanceObject in proximityList)
         {
-            _body.RotateAround(_body.position, _body.up, 150f);
+            if (distanceObject.otherCreatureTag.Equals("tree"))
+            {
+                isTree = true;
+                distanceToTree = distanceObject.distance;
+                angleToTree = distanceObject.angle;
+            } else
+            {
+                isTree = false;
+            }
+        }
+
+        if (isTree)
+        {
+            if (distanceToTree > 2)
+            {
+                if (angleToTree < 20)
+                {
+                    return new CreatureAction(CreatureAction.Action.move, 0);
+                }
+                else
+                {
+                    return new CreatureAction(CreatureAction.Action.turn, Convert.ToInt64(angleToTree));
+                }
+            }
+            else if (distanceToTree > 0.9)
+            {
+                if (angleToTree < 50)
+                {
+                    return new CreatureAction(CreatureAction.Action.move, 0);
+                } else
+                {
+                    return new CreatureAction(CreatureAction.Action.turn, Convert.ToInt64(angleToTree));
+                }
+            } else
+            {
+                return new CreatureAction(CreatureAction.Action.multiply, 0);
+            }
+        } else
+        {
+            return new CreatureAction(CreatureAction.Action.move, 0);
         }
     }
-
-    //returns true when pointing at tree
 }

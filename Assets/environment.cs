@@ -7,8 +7,8 @@ public class environment : MonoBehaviour
 
     List<EnvCreatureObject> creatureList = new List<EnvCreatureObject>();
 
-    long startingEnergy = 500;
-    float moveSpeed = 0.5f;
+    long startingEnergy = 10000;
+    float moveSpeed = 1f;
 
     // Use this for initialization
     void Start()
@@ -17,6 +17,7 @@ public class environment : MonoBehaviour
         {
             creatureList.Add(new EnvCreatureObject(creature, startingEnergy));
         }
+        creatureList.Add(new EnvCreatureObject(GameObject.FindGameObjectWithTag("tree"), 100000));
     }
 
     // Update is called once per frame
@@ -29,17 +30,20 @@ public class environment : MonoBehaviour
             if (creature.energy < 1)
             {
                 Destroy(creature.thisCreature); // die
+                creatureList.Remove(creature);
+                CalculateDistances();
                 continue;
             }
             if (CreatureAtTree(creature))
             {
                 creature.energy += 1;
             }
-            if (creature.investedReproductionEnergy == 50)
+            if (creature.investedReproductionEnergy == 500)
             {
                 creature.investedReproductionEnergy = 0;
                 Transform currentPos = creature.thisCreature.transform;
-                Instantiate(creature.thisCreature, currentPos.position + currentPos.forward * 1, currentPos.rotation);
+                creatureList.Add(new EnvCreatureObject(Instantiate(creature.thisCreature, currentPos.position + currentPos.forward * 5, currentPos.rotation), startingEnergy));
+                CalculateDistances();
             }
         }
 
@@ -53,11 +57,15 @@ public class environment : MonoBehaviour
             {
                 if (distanceObject.distance < 10)
                 {
-                    proximityList.Add(new DistanceToOtherCreatures(distanceObject.otherCreature.thisCreature.tag, distanceObject.distance));
+                    proximityList.Add(new DistanceToOtherCreatures(distanceObject.otherCreature.thisCreature.tag, distanceObject.distance, distanceObject.angle));
                 }
             }
 
             // call the environment method on this object which returns an action object indicating what the creature will do, add to list
+            if (creature.thisCreature.tag.Equals("tree"))
+            {
+                continue;
+            }
             creatureActions.Add(new EnvCreatureAction(creature.thisCreature.GetComponent<Creature>().EnvironmentMethod(proximityList), creature));
         }
 
@@ -97,7 +105,7 @@ public class environment : MonoBehaviour
     {
         foreach (GameObject tree in GameObject.FindGameObjectsWithTag("tree")) // could be many trees
         {
-            if (Vector3.Distance(creature.thisCreature.transform.position, tree.transform.position) < 0.5f)
+            if (Vector3.Distance(creature.thisCreature.transform.position, tree.transform.position) < 1f)
             {
                 return true;
             }
@@ -115,8 +123,10 @@ public class environment : MonoBehaviour
                 {
                     continue;
                 }
+                Transform thisCreatureTransform = creature.thisCreature.transform;
                 creature.distanceToOtherCreatures.Add(new EnvDistanceToOtherCreaturesObject(otherCreature,
-                    Vector3.Distance(creature.thisCreature.transform.position, otherCreature.thisCreature.transform.position)));
+                    Vector3.Distance(thisCreatureTransform.position, otherCreature.thisCreature.transform.position),
+                    Vector3.Angle(thisCreatureTransform.forward, otherCreature.thisCreature.transform.position - thisCreatureTransform.position)));
             }
         }
     }
@@ -147,7 +157,7 @@ public class environment : MonoBehaviour
     {
         public long energy;
         public GameObject thisCreature;
-        public List<EnvDistanceToOtherCreaturesObject> distanceToOtherCreatures;
+        public List<EnvDistanceToOtherCreaturesObject> distanceToOtherCreatures = new List<EnvDistanceToOtherCreaturesObject>();
         public long investedReproductionEnergy;
 
         public EnvCreatureObject(GameObject thisCreature, long energy)
@@ -161,11 +171,13 @@ public class environment : MonoBehaviour
     {
         public EnvCreatureObject otherCreature;
         public float distance;
+        public float angle;
 
-        public EnvDistanceToOtherCreaturesObject(EnvCreatureObject otherCreature, float distance)
+        public EnvDistanceToOtherCreaturesObject(EnvCreatureObject otherCreature, float distance, float angle)
         {
             this.otherCreature = otherCreature;
             this.distance = distance;
+            this.angle = angle;
         }
     }
 }

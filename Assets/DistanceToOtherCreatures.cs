@@ -6,20 +6,12 @@ public class DistanceToOtherCreatures
 {
     public string otherCreatureTag;
     public float distance;
+    public float angle;
 
-    public DistanceToOtherCreatures(string otherCreature, float distance)
+    public DistanceToOtherCreatures(string otherCreature, float distance, float angle)
     {
-        this.otherCreatureTag = otherCreature;
+        otherCreatureTag = otherCreature;
         this.distance = distance;
-    }
-
-    public string GetOtherCreatureTag()
-    {
-        return otherCreatureTag;
-    }
-
-    public float GetDistance()
-    {
-        return distance;
+        this.angle = angle;
     }
 }
